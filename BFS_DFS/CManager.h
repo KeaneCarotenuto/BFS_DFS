@@ -23,6 +23,8 @@ public:
 
 	CNode* connecting = nullptr;
 
+	std::vector<sf::VertexArray*> doneLines;
+
 	sf::Clock clock;
 	int slowed = 1;
 	float step = (1.0f / 60.0f);
@@ -30,7 +32,7 @@ public:
 
 	bool search = false;
 	bool found = false;
-	bool bfs = false;
+	bool bfs = true;
 
 	CNode* target;
 

@@ -6,7 +6,7 @@
 class CNode
 {
 public:
-	CNode(std::string _name, sf::Vector2f _pos, sf::Font _font);
+	CNode(char _name, sf::Vector2f _pos, sf::Font _font);
 
 	sf::Sprite* sprite = new sf::Sprite;
 	sf::Texture texture;
@@ -14,7 +14,12 @@ public:
 
 	std::vector <sf::VertexArray*> lines;
 
-	std::string name;
+	char name;
 
 	std::vector<CNode*> goesTo;
+
+	static bool IsSmaller(const CNode* _Node, const CNode* _Node2)
+	{
+		return (_Node->name < _Node2->name);
+	}
 };

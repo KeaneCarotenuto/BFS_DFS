@@ -1,7 +1,7 @@
 #include "CNode.h"
 #include <iostream>
 
-CNode::CNode(std::string _name, sf::Vector2f _pos, sf::Font _font)
+CNode::CNode(char _name, sf::Vector2f _pos, sf::Font _font)
 {
 	name = _name;
 

@@ -13,7 +13,7 @@
 
 int FixedUpdate();
 void CreateConnection(CNode* from, CNode* to);
-void CreateLine(CNode* from, CNode* to);
+void CreateLine(CNode* from, CNode* to, bool isDoneLine = false);
 void CheckButtonsPressed();
 void Draw();
 
@@ -21,22 +21,111 @@ void CreateButton(void(*function)(), std::string _string, int _fontSize, sf::Col
 
 CManager manager;
 
-void Print() {
-	std::cout << "Started\n";
-	manager.search = true;
+void Search() {
+	if (!manager.search) {
+		if (!manager.searchList.empty()) {
+			manager.Buttons[0]->text->setString("Wait...");
+			manager.Buttons[0]->rect->setFillColor(sf::Color::Red);
+			manager.Buttons[1]->text->setString("");
+			manager.Buttons[1]->rect->setFillColor(sf::Color::Red);
+			manager.Buttons[2]->text->setString("");
+			manager.Buttons[2]->rect->setFillColor(sf::Color::Red);
+			manager.Buttons[3]->text->setString("");
+			manager.Buttons[3]->rect->setFillColor(sf::Color::Red);
+
+			for (CNode* _node : manager.nodes) {
+				_node->sprite->setColor(sf::Color::White);
+			}
+			for (sf::VertexArray* _line : manager.doneLines) {
+
+				delete _line;
+			}
+			manager.doneLines.clear();
+
+			std::system("CLS");
+
+			std::cout << "Started\nStart: " << manager.searchList[0]->name << "\nGoal: " << manager.target->name << "\n";
+			manager.search = true;
+		}
+		else {
+			std::cout << "Not Enough Nodes to Start\n\n";
+		}
+	}
+	else {
+		std::cout << "Please Wait\n\n";
+	}
+	
+}
+
+void SwapMethod(){
+	if (!manager.search) {
+		manager.bfs = !manager.bfs;
+
+		manager.Buttons[1]->text->setString((manager.bfs ? "BFS" : "DFS"));
+	}
+}
+
+void ClearNodes() {
+	if (!manager.search) {
+		for (CNode* _node : manager.nodes) {
+			for (sf::VertexArray* _line : _node->lines) {
+				delete _line;
+			}
+			_node->lines.clear();
+
+			delete _node->sprite;
+			delete _node->text;
+
+			delete _node;
+		}
+		manager.nodes.clear();
+
+		for (sf::VertexArray* _line : manager.doneLines) {
+
+			delete _line;
+		}
+		manager.doneLines.clear();
+
+		manager.searchList.clear();
+		manager.target = nullptr;
+	}
+}
+
+void ClearConnections() {
+	if (!manager.search) {
+		for (CNode* _node : manager.nodes) {
+			for (sf::VertexArray* _line : _node->lines) {
+				delete _line;
+			}
+			_node->lines.clear();
+
+			_node->goesTo.clear();
+
+			_node->sprite->setColor(sf::Color::White);
+		}
+
+		for (sf::VertexArray* _line : manager.doneLines) {
+
+			delete _line;
+		}
+		manager.doneLines.clear();
+	}
 }
 
 int main() {
-	sf::RenderWindow window(sf::VideoMode(800, 800), "A* Pathfinding - By Keane Carotenuto");
+	sf::RenderWindow window(sf::VideoMode(800, 800), "Breadth First & Depth First Search - By Keane Carotenuto");
 	sf::RenderWindow controlWindow(sf::VideoMode(200, 200), "Controls");
 	controlWindow.setPosition(sf::Vector2i(window.getPosition().x + window.getSize().x, window.getPosition().y));
 
 	manager.window = &window;
 	manager.controlWindow = &controlWindow;
 
-	if (!manager.font.loadFromFile("Fonts/Roboto.ttf")) std::cout << "Failed to load Roboto\n";
+	if (!manager.font.loadFromFile("Fonts/Roboto.ttf")) std::cout << "Failed to load Roboto\n\n";
 
-	CreateButton(&Print, "Test", 25, sf::Color::White, sf::Text::Style::Bold, 0, 0, sf::Color::Color(0, 150, 0), 5);
+	CreateButton(&Search, "Search", 25, sf::Color::White, sf::Text::Style::Bold, 0, 0, sf::Color::Color(0, 150, 0), 5);
+	CreateButton(&SwapMethod, "BFS", 25, sf::Color::White, sf::Text::Style::Bold, 0, 40, sf::Color::Color(0, 150, 0), 5);
+	CreateButton(&ClearNodes, "Clear All", 25, sf::Color::White, sf::Text::Style::Bold, 0, 80, sf::Color::Color(0, 150, 0), 5);
+	CreateButton(&ClearConnections, "Clear Lines", 25, sf::Color::White, sf::Text::Style::Bold, 0, 120, sf::Color::Color(0, 150, 0), 5);
 
 	float stepTime = 0;
 	bool drawn = false;
@@ -90,13 +179,14 @@ int FixedUpdate()
 	manager.currentStep++;
 	manager.ToDrawList.clear();
 
-	if (manager.search &&  !manager.found) {
+	if (manager.search &&  !manager.found && manager.currentStep % 30 == 0 ) {
 		if (!manager.searchList.empty()) {
 			//Get First Item in search
 			CNode* currentNode = manager.searchList[0];
 
 			//Push it to done list
 			manager.doneList.push_back(currentNode);
+			currentNode->sprite->setColor(sf::Color::Yellow);
 
 			//Remove it from search list
 			std::vector<CNode*>::iterator pos = std::find(manager.searchList.begin(), manager.searchList.end(), currentNode);
@@ -107,7 +197,13 @@ int FixedUpdate()
 			//Check if current node is the target
 			if (currentNode == manager.target) {
 				manager.found = true; 
+				std::cout << "Completed Search!\n";
 				goto found;
+			}
+
+			std::sort(currentNode->goesTo.begin(), currentNode->goesTo.end(), CNode::IsSmaller);
+			if (!manager.bfs) {
+				std::reverse(currentNode->goesTo.begin(), currentNode->goesTo.end());
 			}
 
 			//Otherwise loop through connected nodes and add them to search list if valid
@@ -121,7 +217,7 @@ int FixedUpdate()
 				for (CNode* tempnode : manager.doneList) {
 					if (_node == tempnode) canAdd = false;
 				}
-
+				
 				//If valid, add
 				if (canAdd) {
 					//Add to back if BFS, add to front is DFS
@@ -131,8 +227,14 @@ int FixedUpdate()
 					else {
 						manager.searchList.insert(manager.searchList.begin(), _node);
 					}
+
+					_node->sprite->setColor(sf::Color::Green);
 				}
 			}
+		}
+		else {
+			std::cout << "Failed to complete Search\nCheck Nodes and Connections, then try again\n\n";
+			manager.found = true;
 		}
 	}
 	else {
@@ -145,14 +247,14 @@ int FixedUpdate()
 
 				//Cant Place more than 26 nodes
 				if (manager.nodes.size() >= 26) {
-					std::cout << "Max Nodes Reached\n";
+					std::cout << "Max Nodes Reached\n\n";
 					canPlace = false;
 				}
 
 				//Checks if user has clicked on a node, tells them off 
 				for (CNode* _node : manager.nodes) {
 					if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
-						std::cout << "Too Close\n";
+						std::cout << "Too Close\n\n";
 						canPlace = false;
 						break;
 					}
@@ -163,15 +265,15 @@ int FixedUpdate()
 				//If not too close, place a new node at cursor
 				if (canPlace && mousePos.x > 0 && mousePos.x < manager.window->getSize().x && mousePos.y > 0 && mousePos.y < manager.window->getSize().y) {
 
-
-					std::string s(1, char(65 + (int)manager.nodes.size()));
-					manager.nodes.push_back(new CNode(s, (sf::Vector2f)sf::Mouse::getPosition(*manager.window) - sf::Vector2f(32, 32), manager.font));
+					manager.nodes.push_back(new CNode(char(65 + (int)manager.nodes.size()), (sf::Vector2f)sf::Mouse::getPosition(*manager.window) - sf::Vector2f(32, 32), manager.font));
 
 					if (manager.nodes.size() == 1) {
 						manager.searchList.push_back(manager.nodes[0]);
 					}
 
 					manager.target = *(manager.nodes.end() - 1);
+
+					std::sort(manager.nodes.begin(), manager.nodes.end(), CNode::IsSmaller);
 				}
 
 				manager.frozenPlace = true;
@@ -227,9 +329,28 @@ found:
 		manager.found = false;
 		manager.search = false;
 
+		manager.Buttons[0]->text->setString("Search");
+		manager.Buttons[0]->rect->setFillColor(sf::Color::Color(0, 150, 0));
+		manager.Buttons[1]->text->setString(manager.bfs ? "BFS" : "DFS");
+		manager.Buttons[1]->rect->setFillColor(sf::Color::Color(0, 150, 0));
+		manager.Buttons[2]->text->setString("Clear All");
+		manager.Buttons[2]->rect->setFillColor(sf::Color::Color(0, 150, 0));
+		manager.Buttons[3]->text->setString("Clear Lines");
+		manager.Buttons[3]->rect->setFillColor(sf::Color::Color(0, 150, 0));
+
+		std::string str = "Search Order: ";
+
+		CNode* prevNode = nullptr;
 		for (CNode* _node : manager.doneList) {
-			std::cout << _node->name << std::endl;
+			if (prevNode != nullptr) {
+				CreateLine(prevNode, _node, true);
+			}
+			prevNode = _node;
+
+			str += _node->name;
 		}
+
+		std::cout << str + "\n\n";
 
 		manager.doneList.clear();
 		manager.searchList.clear();
@@ -253,6 +374,10 @@ found:
 	//Draw cursor line
 	manager.ToDrawList.push_back(manager.templine);
 
+	for (sf::VertexArray* _line : manager.doneLines) {
+		manager.ToDrawList.push_back(_line);
+	}
+
 	return 1;
 }
 
@@ -263,22 +388,25 @@ void CreateConnection(CNode* from, CNode* to) {
 
 	//If trying to connect self, return
 	if (from == to) {
-		std::cout << "Can't Connect to Self\n";
+		std::cout << "Can't Connect to Self\n\n";
 		return;
 	}
 
 	//If connection already made, return
 	for (CNode* _node : from->goesTo) {
 		if (_node == to) {
-			std::cout << "Already Connected\n";
+			std::cout << "Already Connected\n\n";
 			return;
 		}
 	}
 
 	//Otherwise make connection
-	std::cout << "Created Connection\n";
+	std::cout << "Created Connection\n\n";
 	from->goesTo.push_back(to);
 	to->goesTo.push_back(from);
+
+	std::sort(from->goesTo.begin(), from->goesTo.end(), CNode::IsSmaller);
+	std::sort(to->goesTo.begin(), to->goesTo.end(), CNode::IsSmaller);
 
 	CreateLine(from, to);
 }
@@ -286,14 +414,21 @@ void CreateConnection(CNode* from, CNode* to) {
 /// <summary>
 /// Creates a line between two nodes
 /// </summary>
-void CreateLine(CNode* from, CNode* to)
+void CreateLine(CNode* from, CNode* to, bool isDoneLine)
 {
 	sf::VertexArray* lines = new sf::VertexArray(sf::LineStrip, 2);
 	lines->operator[](0).position = sf::Vector2f(from->sprite->getPosition().x + 32, from->sprite->getPosition().y + 32);
-	lines->operator[](0).color = sf::Color::Green;
+	lines->operator[](0).color = (isDoneLine ? sf::Color::Green : sf::Color::Red);
 	lines->operator[](1).position = sf::Vector2f(to->sprite->getPosition().x + 32, to->sprite->getPosition().y + 32);
-	lines->operator[](1).color = sf::Color::Green;
-	from->lines.push_back(lines);
+	lines->operator[](1).color = (isDoneLine ? sf::Color::Green : sf::Color::Red);
+
+	if (isDoneLine) {
+		manager.doneLines.push_back(lines);
+	}
+	else {
+		from->lines.push_back(lines);
+	}
+	
 }
 
 /// <summary>
