@@ -22,7 +22,8 @@ void CreateButton(void(*function)(), std::string _string, int _fontSize, sf::Col
 CManager manager;
 
 void Print() {
-	std::cout << "printed\n";
+	std::cout << "Started\n";
+	manager.search = true;
 }
 
 int main() {
@@ -89,81 +90,150 @@ int FixedUpdate()
 	manager.currentStep++;
 	manager.ToDrawList.clear();
 
-	//If Left Click
-	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+	if (manager.search &&  !manager.found) {
+		if (!manager.searchList.empty()) {
+			//Get First Item in search
+			CNode* currentNode = manager.searchList[0];
 
-		//Prevents multiple clicks while holding
-		if (!manager.frozenPlace) {
-			bool canPlace = true;
+			//Push it to done list
+			manager.doneList.push_back(currentNode);
 
-			//Cant Place more than 26 nodes
-			if (manager.nodes.size() >= 26) {
-				std::cout << "Max Nodes Reached\n";
-				canPlace = false;
+			//Remove it from search list
+			std::vector<CNode*>::iterator pos = std::find(manager.searchList.begin(), manager.searchList.end(), currentNode);
+			if (pos != manager.searchList.end()) {
+				manager.searchList.erase(pos);
 			}
 
-			//Checks if user has clicked on a node, tells them off 
-			for (CNode* _node : manager.nodes) {
-				if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
-					std::cout << "Too Close\n";
+			//Check if current node is the target
+			if (currentNode == manager.target) {
+				manager.found = true; 
+				goto found;
+			}
+
+			//Otherwise loop through connected nodes and add them to search list if valid
+			for (CNode* _node : currentNode->goesTo) {
+				bool canAdd = true;
+
+				//If already searched or done, dont add
+				for (CNode* tempnode : manager.searchList) {
+					if (_node == tempnode) canAdd = false;
+				}
+				for (CNode* tempnode : manager.doneList) {
+					if (_node == tempnode) canAdd = false;
+				}
+
+				//If valid, add
+				if (canAdd) {
+					//Add to back if BFS, add to front is DFS
+					if (manager.bfs) {
+						manager.searchList.push_back(_node);
+					}
+					else {
+						manager.searchList.insert(manager.searchList.begin(), _node);
+					}
+				}
+			}
+		}
+	}
+	else {
+		//If Left Click
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+
+			//Prevents multiple clicks while holding
+			if (!manager.frozenPlace) {
+				bool canPlace = true;
+
+				//Cant Place more than 26 nodes
+				if (manager.nodes.size() >= 26) {
+					std::cout << "Max Nodes Reached\n";
 					canPlace = false;
-					break;
 				}
-			}
 
-			sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(*manager.window);
-
-			//If not too close, place a new node at cursor
-			if (canPlace && mousePos.x > 0 && mousePos.x < manager.window->getSize().x && mousePos.y > 0 && mousePos.y < manager.window->getSize().y) {
-				std::string s(1, char(65 + (int)manager.nodes.size()));
-				manager.nodes.push_back(new CNode(s, (sf::Vector2f)sf::Mouse::getPosition(*manager.window) - sf::Vector2f(32, 32), manager.font));
-			}
-
-			manager.frozenPlace = true;
-		}
-	}
-	else {
-		manager.frozenPlace = false;
-	}
-
-	//If Holding Right Click
-	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
-
-		//If no current node selected, select one, otherwise draw line from said node to cursor
-		if (manager.connecting == nullptr) {
-			for (CNode* _node : manager.nodes) {
-				if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
-					manager.connecting = _node;
-					break;
+				//Checks if user has clicked on a node, tells them off 
+				for (CNode* _node : manager.nodes) {
+					if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
+						std::cout << "Too Close\n";
+						canPlace = false;
+						break;
+					}
 				}
+
+				sf::Vector2f mousePos = (sf::Vector2f)sf::Mouse::getPosition(*manager.window);
+
+				//If not too close, place a new node at cursor
+				if (canPlace && mousePos.x > 0 && mousePos.x < manager.window->getSize().x && mousePos.y > 0 && mousePos.y < manager.window->getSize().y) {
+
+
+					std::string s(1, char(65 + (int)manager.nodes.size()));
+					manager.nodes.push_back(new CNode(s, (sf::Vector2f)sf::Mouse::getPosition(*manager.window) - sf::Vector2f(32, 32), manager.font));
+
+					if (manager.nodes.size() == 1) {
+						manager.searchList.push_back(manager.nodes[0]);
+					}
+
+					manager.target = *(manager.nodes.end() - 1);
+				}
+
+				manager.frozenPlace = true;
 			}
 		}
 		else {
-			manager.templine->operator[](0).position = sf::Vector2f(manager.connecting->sprite->getPosition().x + 32, manager.connecting->sprite->getPosition().y + 32);
-			manager.templine->operator[](0).color = sf::Color::Yellow;
-			manager.templine->operator[](1).position = (sf::Vector2f)sf::Mouse::getPosition(*manager.window);
-			manager.templine->operator[](1).color = sf::Color::Yellow;
+			manager.frozenPlace = false;
 		}
-	}
-	else {
 
-		//If has node selected, and you release right click, otherwise hide line
-		if (manager.connecting != nullptr) {
+		//If Holding Right Click
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
 
-			//Checks if cursor is over node, then tries to create connection
-			for (CNode* _node : manager.nodes) {
-				if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
-					CreateConnection(manager.connecting, _node);
-					break;
+			//If no current node selected, select one, otherwise draw line from said node to cursor
+			if (manager.connecting == nullptr) {
+				for (CNode* _node : manager.nodes) {
+					if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
+						manager.connecting = _node;
+						break;
+					}
 				}
+			}
+			else {
+				manager.templine->operator[](0).position = sf::Vector2f(manager.connecting->sprite->getPosition().x + 32, manager.connecting->sprite->getPosition().y + 32);
+				manager.templine->operator[](0).color = sf::Color::Yellow;
+				manager.templine->operator[](1).position = (sf::Vector2f)sf::Mouse::getPosition(*manager.window);
+				manager.templine->operator[](1).color = sf::Color::Yellow;
 			}
 		}
 		else {
-			manager.templine->operator[](0).position = sf::Vector2f(0, 0);
-			manager.templine->operator[](1).position = sf::Vector2f(0, 0);
+
+			//If has node selected, and you release right click, otherwise hide line
+			if (manager.connecting != nullptr) {
+
+				//Checks if cursor is over node, then tries to create connection
+				for (CNode* _node : manager.nodes) {
+					if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
+						CreateConnection(manager.connecting, _node);
+						break;
+					}
+				}
+			}
+			else {
+				manager.templine->operator[](0).position = sf::Vector2f(0, 0);
+				manager.templine->operator[](1).position = sf::Vector2f(0, 0);
+			}
+
+			manager.connecting = nullptr;
+		}
+	}
+
+found:
+	if (manager.found) {
+		manager.found = false;
+		manager.search = false;
+
+		for (CNode* _node : manager.doneList) {
+			std::cout << _node->name << std::endl;
 		}
 
-		manager.connecting = nullptr;
+		manager.doneList.clear();
+		manager.searchList.clear();
+		manager.searchList.push_back(manager.nodes[0]);
 	}
 
 	//Draw Nodes first
