@@ -44,7 +44,8 @@ void Search() {
 
 			std::system("CLS");
 
-			std::cout << "Started\nStart: " << manager.searchList[0]->name << "\nGoal: " << manager.target->name << "\n";
+			std::string type = (manager.bfs ? "BFS" : "DFS");
+			std::cout << "Started " + type + "\nStart: " + manager.searchList[0]->name + "\nGoal: " + manager.target->name + "\n";
 			manager.search = true;
 		}
 		else {
