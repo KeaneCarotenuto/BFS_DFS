@@ -405,9 +405,24 @@ void TryPlaceNode()
 		//Checks if user has clicked on a node, tells them off 
 		for (CNode* _node : manager.nodes) {
 			if (_node->sprite->getGlobalBounds().contains((sf::Vector2f)sf::Mouse::getPosition(*manager.window))) {
-				std::cout << "Too Close\n\n";
 				canPlace = false;
-				break;
+
+				if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+					manager.searchList.clear();
+					manager.searchList.push_back(_node);
+					std::cout << "Start Node Set: " + std::string(1,_node->name) + "\n\n";
+					break;
+				}
+				else if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)) {
+					manager.target = _node;
+					std::cout << "Goal Node Set: " + std::string(1, _node->name) + "\n\n";
+				}
+				else {
+					std::cout << "Too Close\n\n";
+					break;
+				}
+
+				
 			}
 		}
 
@@ -445,13 +460,13 @@ void CreateConnection(CNode* from, CNode* to) {
 	//If connection already made, return
 	for (CNode* _node : from->goesTo) {
 		if (_node == to) {
-			std::cout << "Already Connected\n\n";
+			std::cout << "(" + std::string(1, from->name) + "," + std::string(1, to->name) + ") Already Connected\n\n";
 			return;
 		}
 	}
 
 	//Otherwise make connection
-	std::cout << "Created Connection\n\n";
+	std::cout << "Created Connection (" + std::string(1,from->name) + "," + std::string(1, to->name) +")\n\n";
 	from->goesTo.push_back(to);
 	to->goesTo.push_back(from);
 
