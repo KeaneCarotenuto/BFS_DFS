@@ -483,9 +483,9 @@ void CreateLine(CNode* from, CNode* to, bool isDoneLine)
 {
 	sf::VertexArray* lines = new sf::VertexArray(sf::LineStrip, 2);
 	lines->operator[](0).position = sf::Vector2f(from->sprite->getPosition().x + 32, from->sprite->getPosition().y + 32);
-	lines->operator[](0).color = (isDoneLine ? sf::Color::Green : sf::Color::Red);
+	lines->operator[](0).color = (isDoneLine ? sf::Color::Green : sf::Color::White);
 	lines->operator[](1).position = sf::Vector2f(to->sprite->getPosition().x + 32, to->sprite->getPosition().y + 32);
-	lines->operator[](1).color = (isDoneLine ? sf::Color::Green : sf::Color::Red);
+	lines->operator[](1).color = (isDoneLine ? sf::Color::Red : sf::Color::White);
 
 	if (isDoneLine) {
 		manager.doneLines.push_back(lines);
