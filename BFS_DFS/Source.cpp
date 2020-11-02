@@ -326,7 +326,18 @@ void BFS_DFS()
 
 			//If already searched or done, dont add
 			for (CNode* tempnode : manager.searchList) {
-				if (_node == tempnode) canAdd = false;
+				if (_node == tempnode) {
+					if (!manager.bfs) {
+						std::vector<CNode*>::iterator pos = std::find(manager.searchList.begin(), manager.searchList.end(), tempnode);
+						if (pos != manager.searchList.end()) {
+							manager.searchList.erase(pos);
+						}
+					}
+					else {
+						canAdd = false;
+					}
+					
+				}
 			}
 			for (CNode* tempnode : manager.doneList) {
 				if (_node == tempnode) canAdd = false;
