@@ -263,6 +263,13 @@ int FixedUpdate()
 		manager.searchList.push_back(manager.nodes[0]);
 	}
 
+	//Draw Node's lines next
+	for (CNode* _node : manager.nodes) {
+		for (sf::VertexArray* _line : _node->lines) {
+			manager.ToDrawList.push_back(_line);
+		}
+	}
+
 	//Draw Nodes first
 	for (CNode* _node : manager.nodes) {
 		manager.ToDrawList.push_back(_node->sprite);
@@ -270,12 +277,7 @@ int FixedUpdate()
 		manager.ToDrawList.push_back(_node->text);
 	}
 
-	//Draw Node's lines next
-	for (CNode* _node : manager.nodes) {
-		for (sf::VertexArray* _line : _node->lines) {
-			manager.ToDrawList.push_back(_line);
-		}
-	}
+	
 
 	//Draw cursor line
 	manager.ToDrawList.push_back(manager.templine);
@@ -481,18 +483,26 @@ void CreateConnection(CNode* from, CNode* to) {
 /// </summary>
 void CreateLine(CNode* from, CNode* to, bool isDoneLine)
 {
-	sf::VertexArray* lines = new sf::VertexArray(sf::LineStrip, 2);
-	lines->operator[](0).position = sf::Vector2f(from->sprite->getPosition().x + 32, from->sprite->getPosition().y + 32);
-	lines->operator[](0).color = (isDoneLine ? sf::Color::Green : sf::Color::White);
-	lines->operator[](1).position = sf::Vector2f(to->sprite->getPosition().x + 32, to->sprite->getPosition().y + 32);
-	lines->operator[](1).color = (isDoneLine ? sf::Color::Red : sf::Color::White);
 
-	if (isDoneLine) {
-		manager.doneLines.push_back(lines);
+	for (int i = 0; i <= 1000; i++) {
+		sf::VertexArray* lines = new sf::VertexArray(sf::LineStrip, 2);
+		int width = (isDoneLine ? 6 : 4);
+
+		lines->operator[](0).position = sf::Vector2f(from->sprite->getPosition().x + 32 + rand() % width * (rand() % 2 == 0 ? -1 : 1), from->sprite->getPosition().y + 32 + rand() % width * (rand() % 2 == 0 ? -1 : 1));
+		lines->operator[](0).color = (isDoneLine ? sf::Color::Color(0,255,0,1) : sf::Color::White);
+		lines->operator[](1).position = sf::Vector2f(to->sprite->getPosition().x + 32 + rand() % width * (rand() % 2 == 0 ? -1 : 1), to->sprite->getPosition().y + 32 + rand() % width * (rand() % 2 == 0 ? -1 : 1));
+		lines->operator[](1).color = (isDoneLine ? sf::Color::Color(255, 0, 0, 1) : sf::Color::White);
+
+		if (isDoneLine) {
+			manager.doneLines.push_back(lines);
+		}
+		else {
+			from->lines.push_back(lines);
+		}
 	}
-	else {
-		from->lines.push_back(lines);
-	}
+
+	
+	
 	
 }
 
