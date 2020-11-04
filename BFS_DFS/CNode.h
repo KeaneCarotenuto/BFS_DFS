@@ -1,3 +1,5 @@
+//A node class
+
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <string>

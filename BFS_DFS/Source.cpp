@@ -11,6 +11,7 @@
 #include "CManager.h"
 #include "CNode.h"
 
+//Functions
 int FixedUpdate();
 void BeginConnecting();
 void EndConnecting();
@@ -126,7 +127,9 @@ void ClearConnections() {
 	}
 }
 
+//Start
 int main() {
+	//make windows
 	sf::RenderWindow window(sf::VideoMode(800, 800), "Breadth First & Depth First Search - By Keane Carotenuto");
 	sf::RenderWindow controlWindow(sf::VideoMode(200, 200), "Controls");
 	controlWindow.setPosition(sf::Vector2i(window.getPosition().x + window.getSize().x, window.getPosition().y));
@@ -136,6 +139,7 @@ int main() {
 
 	if (!manager.font.loadFromFile("Fonts/Roboto.ttf")) std::cout << "Failed to load Roboto\n\n";
 
+	//Create buttons
 	CreateButton(&Search, "Search", 25, sf::Color::White, sf::Text::Style::Bold, 0, 0, sf::Color::Color(0, 150, 0), 5);
 	CreateButton(&SwapMethod, "BFS", 25, sf::Color::White, sf::Text::Style::Bold, 0, 40, sf::Color::Color(0, 150, 0), 5);
 	CreateButton(&ClearNodes, "Clear All", 25, sf::Color::White, sf::Text::Style::Bold, 0, 80, sf::Color::Color(0, 150, 0), 5);
@@ -144,7 +148,7 @@ int main() {
 	float stepTime = 0;
 	bool drawn = false;
 
-
+	//Fixed update loop
 	while (window.isOpen() == true)
 	{
 		stepTime += manager.clock.getElapsedTime().asSeconds();
@@ -237,7 +241,7 @@ int FixedUpdate()
 		}
 	}
 
-
+	//If the end has been found
 	if (manager.found) {
 		manager.found = false;
 		manager.search = false;
@@ -246,6 +250,7 @@ int FixedUpdate()
 
 		std::string str = "Search Order: ";
 
+		//Draw path
 		CNode* prevNode = nullptr;
 		for (CNode* _node : manager.doneList) {
 			if (prevNode != nullptr) {

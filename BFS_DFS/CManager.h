@@ -1,3 +1,5 @@
+//The manager that takes care of vars
+
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "CButton.h"
