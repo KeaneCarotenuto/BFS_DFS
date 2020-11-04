@@ -130,7 +130,7 @@ void ClearConnections() {
 //Start
 int main() {
 	//make windows
-	sf::RenderWindow window(sf::VideoMode(800, 800), "Breadth First & Depth First Search - By Keane Carotenuto");
+	sf::RenderWindow window(sf::VideoMode(800, 800), "Breadth First & Depth First Search - By Keane Carotenuto & Nerys Thamm");
 	sf::RenderWindow controlWindow(sf::VideoMode(200, 200), "Controls");
 	controlWindow.setPosition(sf::Vector2i(window.getPosition().x + window.getSize().x, window.getPosition().y));
 
